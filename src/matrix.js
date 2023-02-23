@@ -1,22 +1,22 @@
-export default class Game {
+export default class Matrix {
 
     constructor(width, height, bombCount) {
         this.width = width;
         this.height = height;
         this.bombCount = bombCount;
 
-        this.reset();
+        this.setState();
     };
 
     generateRandom = (min = 0, max = 100) => {
         let difference = max - min;
-
+    
         let rand = Math.random();
-
+    
         rand = Math.floor(rand * difference);
-
+    
         rand = rand + min;
-
+    
         return rand;
     };
 
@@ -33,7 +33,7 @@ export default class Game {
             const matrixElem = matrix[y][x];
 
             if (!matrixElem.number) {
-                matrix[y][x] = {number: 9, show: 0};
+                matrix[y][x] = {number: 9, show: 0, isFlag: 0 };
                 currentBombCount -= 1;
             }
         }
@@ -74,7 +74,7 @@ export default class Game {
             matrix[y] = [];
 
             for (let x = 0; x < this.width; x++) {
-                matrix[y][x] = { number: 0, show: 0 };
+                matrix[y][x] = { number: 0, show: 0, isFlag: 0 };
             }
         }
 
@@ -92,12 +92,30 @@ export default class Game {
                 };
             }
         };
-
-        this.renderMatrix(matrix);
     };
 
-    reset() {
+    showBLock(y, x, matrix) {
+        matrix[y][x].show = 1;
+
+        if (matrix[y][x].number !== 0) {
+            return;
+        }
+
+        this.checkZero(y, x - 1, matrix);
+        this.checkZero(y, x + 1, matrix);
+        this.checkZero(y - 1, x, matrix);
+        this.checkZero(y + 1, x, matrix);
+    };
+
+    checkZero(y, x, matrix) {
+        if (y >= 0 && y <= matrix.length - 1 && x >= 0 && x <= matrix.length - 1) {
+            if (!matrix[y][x].show) {
+                this.showBLock(y, x, matrix);
+            }
+        }
+    };
+
+    setState() {
         this.matrix = this.createMatrix();
-        console.log(this.matrix);
     };
 };

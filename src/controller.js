@@ -1,48 +1,127 @@
 export default class Controller {
-    constructor(game, view) {
-        this.game = game;
+
+    constructor(matrix, view) {
+        this.matrix = matrix;
         this.view = view;
 
-        this.intervalId = null;
-        
-        this.view.canvas.addEventListener("click", this.handlerClick.bind(this));
+        this.isPlaying = false;
+        this.isGameOver = false;
 
-        this.view.renderMatrix(this.game.matrix);
+        this.timerId = null;
+        this.timerValue = 0;
+
+        this.guessBombCount = 5;
+
+        this.view.canvas.addEventListener("click", this.handlerLeftClick.bind(this));
+        document.addEventListener("keydown", this.handleKeydown.bind(this));
+
+        this.view.renderStartScreen();
     };
 
-    handlerClick(e) {
+    mouseCoordinates(e) {
         const rect = this.view.canvas.getBoundingClientRect();
         const y = Math.floor((e.clientY - rect.top) / this.view.btnSize);
         const x = Math.floor((e.clientX - rect.left) / this.view.btnSize);
 
-        if (this.game.matrix[y][x].number === 9) {
-            this.game.openAllBombs(this.game.matrix);
-            console.log("lose");
+        return {
+            y, x
         };
-
-        this.showBLock(y, x);
     };
 
-    showBLock(y, x) {
-        this.game.matrix[y][x].show = 1;
+    handlerLeftClick(e) {
+        if (this.isPlaying) {
+            const { y, x } = this.mouseCoordinates(e);
 
-        if (this.game.matrix[y][x].number !== 0) {
-            this.view.renderMatrix(this.game.matrix);
-            return;
-        }
+            if (this.matrix.matrix[y][x].number === 9) {
+                this.matrix.openAllBombs(this.matrix.matrix);
 
-        this.checkZero(y, x - 1);
-        this.checkZero(y, x + 1);
-        this.checkZero(y - 1, x);
-        this.checkZero(y + 1, x);
-    };
-
-    checkZero(y, x) {
-        if (y >= 0 && y <= this.game.matrix.length - 1 && x >= 0 && x <= this.game.matrix.length - 1) {
-            if (!this.game.matrix[y][x].show) {
-                this.showBLock(y, x);
-                this.view.renderMatrix(this.game.matrix);
+                this.gameOver();
             }
+            else {
+                this.matrix.showBLock(y, x, this.matrix.matrix);
+                this.view.renderMatrix(this.matrix);
+            }
+        };
+    };
+
+    play() {
+        this.isPlaying = true;
+
+        this.startTimer();
+
+        this.view.renderMatrix(this.matrix);
+        this.view.renderPanel(this.timerValue);
+    };
+
+    pause() {
+        this.isPlaying = false;
+
+        this.stopTimer();
+
+        this.view.renderPauseScreen();
+    };
+
+    gameOver() {
+        this.isPlaying = false;
+        this.isGameOver = true;
+
+        this.stopTimer();
+
+        this.view.renderEndScreen(this.timerValue, this.guessBombCount);
+    };
+
+    reset() {
+        this.isPlaying = false;
+        this.isGameOver = false;
+
+        this.timerId = null;
+        this.timerValue = 0;
+
+        this.guessBombCount = 5;
+
+        this.view.clearAllCanvas();
+
+        this.matrix.createMatrix();
+
+        this.view.renderStartScreen();
+    };
+
+    resetTimer() {
+        this.view.clearPanel();
+        this.view.renderPanel(this.timerValue);
+    };
+
+    startTimer() {
+        const speed = 1000;
+
+        if (!this.timerId) {
+            this.timerId = setInterval(() => {
+                this.timerValue += 1;
+                this.resetTimer();
+            }, speed);
+        }
+    };
+
+    stopTimer() {
+        if (this.timerId) {
+            clearInterval(this.timerId);
+            this.timerId = null;
+        }
+    };
+
+    handleKeydown(e) {
+        switch (e.key) {
+            case "Enter":
+                if (this.isGameOver) {
+                    this.reset();
+                }
+                else if (this.isPlaying) {
+                    this.pause();
+                }
+                else {
+                    this.play()
+                }
+                break;
         }
     };
 };
