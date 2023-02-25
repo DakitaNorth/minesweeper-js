@@ -5,7 +5,7 @@ export default class Matrix {
         this.height = height;
         this.bombCount = bombCount;
 
-        this.setState();
+        this.reset();
     };
 
     generateRandom = (min = 0, max = 100) => {
@@ -20,48 +20,48 @@ export default class Matrix {
         return rand;
     };
 
-    addBombs(matrix) {
+    addBombs() {
         let currentBombCount = this.bombCount;
 
-        let matrixWidth = matrix[0].length;
-        let matrixHeight = matrix.length;
+        let matrixWidth = this.matrix[0].length;
+        let matrixHeight = this.matrix.length;
 
         while (currentBombCount) {
             const x = this.generateRandom(0, matrixWidth - 1);
             const y = this.generateRandom(0, matrixHeight - 1);
 
-            const matrixElem = matrix[y][x];
+            const matrixElem = this.matrix[y][x];
 
             if (!matrixElem.number) {
-                matrix[y][x] = {number: 9, show: 0, isFlag: 0 };
+                this.matrix[y][x] = {number: 9, show: 0, isFlag: 0 };
                 currentBombCount -= 1;
             }
         }
     };
 
-    plusOne(y, x, matrix) {
-        if (y >= 0 && y <= matrix.length - 1 && x >= 0 && x <= matrix.length - 1) {
-            if (matrix[y][x].number !== 9) {
-                matrix[y][x].number += 1;
+    plusOne(y, x) {
+        if (y >= 0 && y <= this.matrix.length - 1 && x >= 0 && x <= this.matrix.length - 1) {
+            if (this.matrix[y][x].number !== 9) {
+                this.matrix[y][x].number += 1;
             }
         }
     };
 
-    addNumbers(matrix) {
-        for (let y = 0; y < matrix.length ; y++) {
-            for (let x = 0; x < matrix[y].length; x++) {
-                if (matrix[y][x].number === 9) {
-                    this.plusOne(y, x - 1, matrix);
-                    this.plusOne(y, x + 1, matrix);
+    addNumbers() {
+        for (let y = 0; y < this.matrix.length ; y++) {
+            for (let x = 0; x < this.matrix[y].length; x++) {
+                if (this.matrix[y][x].number === 9) {
+                    this.plusOne(y, x - 1);
+                    this.plusOne(y, x + 1);
 
-                    this.plusOne(y - 1, x, matrix);
-                    this.plusOne(y + 1, x, matrix);
+                    this.plusOne(y - 1, x);
+                    this.plusOne(y + 1, x);
 
-                    this.plusOne(y - 1, x - 1, matrix);
-                    this.plusOne(y + 1, x + 1, matrix);
+                    this.plusOne(y - 1, x - 1);
+                    this.plusOne(y + 1, x + 1);
 
-                    this.plusOne(y - 1, x + 1, matrix);
-                    this.plusOne(y + 1, x - 1, matrix);
+                    this.plusOne(y - 1, x + 1);
+                    this.plusOne(y + 1, x - 1);
                 }
             }
         }
@@ -78,44 +78,77 @@ export default class Matrix {
             }
         }
 
-        this.addBombs(matrix);
-        this.addNumbers(matrix);
-
         return matrix;
     };
 
-    openAllBombs(matrix) {
-        for (let y = 0; y < matrix.length; y++) {
-            for (let x = 0; x < matrix[y].length; x++) {
-                if (matrix[y][x].number === 9) {
-                    matrix[y][x].show = 1;
+    openAllBombs() {
+        for (let y = 0; y < this.matrix.length; y++) {
+            for (let x = 0; x < this.matrix[y].length; x++) {
+                if (this.matrix[y][x].number === 9 && this.matrix[y][x].isFlag !== 1) {
+                    this.matrix[y][x].show = 1;
                 };
             }
         };
     };
 
-    showBLock(y, x, matrix) {
-        matrix[y][x].show = 1;
+    showBLock(y, x) {
+        this.matrix[y][x].show = 1;
 
-        if (matrix[y][x].number !== 0) {
+        if (this.matrix[y][x].number !== 0) {
             return;
         }
 
-        this.checkZero(y, x - 1, matrix);
-        this.checkZero(y, x + 1, matrix);
-        this.checkZero(y - 1, x, matrix);
-        this.checkZero(y + 1, x, matrix);
+        this.checkZero(y, x - 1);
+        this.checkZero(y, x + 1);
+        this.checkZero(y - 1, x);
+        this.checkZero(y + 1, x);
     };
 
-    checkZero(y, x, matrix) {
-        if (y >= 0 && y <= matrix.length - 1 && x >= 0 && x <= matrix.length - 1) {
-            if (!matrix[y][x].show) {
-                this.showBLock(y, x, matrix);
+    checkZero(y, x) {
+        if (y >= 0 && y <= this.matrix.length - 1 && x >= 0 && x <= this.matrix.length - 1) {
+            if (!this.matrix[y][x].show && !this.matrix[y][x].isFlag) {
+                this.showBLock(y, x);
             }
         }
     };
 
-    setState() {
+    setFlag(y, x) {
+        if (!this.matrix[y][x].isFlag && !this.matrix[y][x].show) {
+            this.matrix[y][x].isFlag = 1;
+        }
+        else {
+            this.matrix[y][x].isFlag = 0;
+        }
+    };
+
+    isAllBombsGuessed() {
+        let bombsCount = 0;
+
+        for (let y = 0; y < this.matrix.length ; y++) {
+            for (let x = 0; x < this.matrix[y].length; x++) {
+                if (this.matrix[y][x].isFlag === 1 && this.matrix[y][x].number === 9) {
+                    bombsCount += 1;
+                }
+            }
+        };
+
+        return bombsCount;
+    };
+
+    reset() {
         this.matrix = this.createMatrix();
+        this.addBombs();
+        this.addNumbers();
+        
+        this.guessBombCount = this.isAllBombsGuessed();
+
+        console.log(this.matrix);
+    };
+
+    getState() {
+        return {
+            matrix: this.createMatrix(),
+            bombCount: this.bombCount,
+        }
     };
 };

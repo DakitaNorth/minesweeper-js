@@ -10,9 +10,10 @@ export default class Controller {
         this.timerId = null;
         this.timerValue = 0;
 
-        this.guessBombCount = 5;
+        this.guessBombCount = 0;
 
         this.view.canvas.addEventListener("click", this.handlerLeftClick.bind(this));
+        this.view.canvas.addEventListener("contextmenu", this.handlerRightClick.bind(this));
         document.addEventListener("keydown", this.handleKeydown.bind(this));
 
         this.view.renderStartScreen();
@@ -32,14 +33,36 @@ export default class Controller {
         if (this.isPlaying) {
             const { y, x } = this.mouseCoordinates(e);
 
-            if (this.matrix.matrix[y][x].number === 9) {
-                this.matrix.openAllBombs(this.matrix.matrix);
+            if (this.matrix.matrix[y][x].isFlag !== 1) {
+                if (this.matrix.matrix[y][x].number === 9) {
+                    this.gameOver();
+                }
+                else {
+                    this.matrix.showBLock(y, x);
+                    this.view.renderMatrix(this.matrix);
+                }
+            };
+        };
+    };
 
-                this.gameOver();
+    handlerRightClick(e) {
+        e.preventDefault();
+
+        if (this.isPlaying) {
+            const { y, x } = this.mouseCoordinates(e);
+
+            this.matrix.setFlag(y, x);
+
+            const { bombCount } = this.matrix.getState();
+            
+            this.guessBombCount = this.matrix.isAllBombsGuessed();
+
+            if (bombCount === this.guessBombCount) {
+                this.youAreWin();
             }
             else {
-                this.matrix.showBLock(y, x, this.matrix.matrix);
                 this.view.renderMatrix(this.matrix);
+                console.log(this.guessBombCount);
             }
         };
     };
@@ -67,7 +90,21 @@ export default class Controller {
 
         this.stopTimer();
 
-        this.view.renderEndScreen(this.timerValue, this.guessBombCount);
+        this.matrix.openAllBombs();
+        this.view.renderMatrix(this.matrix);
+
+        this.view.renderGameOverScreen(this.timerValue, this.guessBombCount);
+    };
+
+    youAreWin() {
+        this.isPlaying = false;
+        this.isGameOver = true;
+
+        this.stopTimer();
+
+        this.view.renderMatrix(this.matrix);
+
+        this.view.renderWinScreen(this.timerValue, this.guessBombCount);
     };
 
     reset() {
@@ -77,11 +114,11 @@ export default class Controller {
         this.timerId = null;
         this.timerValue = 0;
 
-        this.guessBombCount = 5;
+        this.guessBombCount = 0;
 
         this.view.clearAllCanvas();
 
-        this.matrix.createMatrix();
+        this.matrix.reset();
 
         this.view.renderStartScreen();
     };
